@@ -48,15 +48,17 @@ def build_exe():
     ]
     
     # Check for assets directories and include them
+    # Note: Both are added to the same "assets" destination folder
+    # Files with the same name will be overwritten by the second directory
     assets_dirs = [
-        project_root / "assets",
-        project_root / "examples" / "demo_tycoon" / "assets",
+        (project_root / "assets", "assets"),
+        (project_root / "examples" / "demo_tycoon" / "assets", "assets/demo"),
     ]
     
-    for assets_dir in assets_dirs:
+    for assets_dir, dest_name in assets_dirs:
         if assets_dir.exists():
-            print(f"Including assets from: {assets_dir}")
-            cmd.extend(["--add-data", f"{assets_dir}{os.pathsep}assets"])
+            print(f"Including assets from: {assets_dir} -> {dest_name}")
+            cmd.extend(["--add-data", f"{assets_dir}{os.pathsep}{dest_name}"])
     
     # Add the main script as the last argument
     cmd.append(str(main_script))

@@ -18,7 +18,13 @@ from pathlib import Path
 
 def get_current_version(version_file):
     """Extract current version from version.py."""
-    content = version_file.read_text()
+    try:
+        content = version_file.read_text(encoding='utf-8')
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Version file not found: {version_file}")
+    except PermissionError:
+        raise PermissionError(f"Permission denied reading: {version_file}")
+    
     match = re.search(r'__version__\s*=\s*"(\d+)\.(\d+)\.(\d+)"', content)
     if not match:
         raise ValueError("Could not find version in version.py")
@@ -42,7 +48,12 @@ def bump_version(version, bump_type):
 def update_version_file(version_file, new_version):
     """Update version.py with new version."""
     version_str = ".".join(str(x) for x in new_version)
-    content = version_file.read_text()
+    try:
+        content = version_file.read_text(encoding='utf-8')
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Version file not found: {version_file}")
+    except PermissionError:
+        raise PermissionError(f"Permission denied reading: {version_file}")
     
     # Update __version__
     content = re.sub(
@@ -51,23 +62,38 @@ def update_version_file(version_file, new_version):
         content
     )
     
-    version_file.write_text(content)
+    try:
+        version_file.write_text(content, encoding='utf-8')
+    except PermissionError:
+        raise PermissionError(f"Permission denied writing: {version_file}")
+    
     print(f"✓ Updated {version_file.name}")
 
 
 def update_pyproject_toml(pyproject_file, new_version):
     """Update pyproject.toml with new version."""
     version_str = ".".join(str(x) for x in new_version)
-    content = pyproject_file.read_text()
+    try:
+        content = pyproject_file.read_text(encoding='utf-8')
+    except FileNotFoundError:
+        raise FileNotFoundError(f"pyproject.toml not found: {pyproject_file}")
+    except PermissionError:
+        raise PermissionError(f"Permission denied reading: {pyproject_file}")
     
-    # Update version line
+    # Update version line in [project] section
+    # More specific pattern to match only the project version
     content = re.sub(
-        r'version\s*=\s*"[^"]*"',
-        f'version = "{version_str}"',
-        content
+        r'(\[project\].*?version\s*=\s*)"[^"]*"',
+        r'\1"' + version_str + '"',
+        content,
+        flags=re.DOTALL
     )
     
-    pyproject_file.write_text(content)
+    try:
+        pyproject_file.write_text(content, encoding='utf-8')
+    except PermissionError:
+        raise PermissionError(f"Permission denied writing: {pyproject_file}")
+    
     print(f"✓ Updated {pyproject_file.name}")
 
 
@@ -83,28 +109,36 @@ def main():
     version_file = project_root / "tycoon_engine" / "version.py"
     pyproject_file = project_root / "pyproject.toml"
     
-    # Get current version
-    current_version = get_current_version(version_file)
-    current_str = ".".join(str(x) for x in current_version)
+    try:
+        # Get current version
+        current_version = get_current_version(version_file)
+        current_str = ".".join(str(x) for x in current_version)
+        
+        # Bump version
+        new_version = bump_version(current_version, bump_type)
+        new_str = ".".join(str(x) for x in new_version)
+        
+        print(f"\nBumping version ({bump_type}):")
+        print(f"  {current_str} -> {new_str}")
+        print()
+        
+        # Update files
+        update_version_file(version_file, new_version)
+        update_pyproject_toml(pyproject_file, new_version)
+        
+        print(f"\n✓ Version bumped to {new_str}")
+        print("\nNext steps:")
+        print("  1. Review the changes: git diff")
+        print("  2. Commit the changes: git add . && git commit -m 'Bump version to {}'".format(new_str))
+        print("  3. Create a tag: git tag -a v{} -m 'Release v{}'".format(new_str, new_str))
+        print("  4. Push changes: git push && git push --tags")
     
-    # Bump version
-    new_version = bump_version(current_version, bump_type)
-    new_str = ".".join(str(x) for x in new_version)
-    
-    print(f"\nBumping version ({bump_type}):")
-    print(f"  {current_str} -> {new_str}")
-    print()
-    
-    # Update files
-    update_version_file(version_file, new_version)
-    update_pyproject_toml(pyproject_file, new_version)
-    
-    print(f"\n✓ Version bumped to {new_str}")
-    print("\nNext steps:")
-    print("  1. Review the changes: git diff")
-    print("  2. Commit the changes: git add . && git commit -m 'Bump version to {}'".format(new_str))
-    print("  3. Create a tag: git tag -a v{} -m 'Release v{}'".format(new_str, new_str))
-    print("  4. Push changes: git push && git push --tags")
+    except (FileNotFoundError, PermissionError, ValueError) as e:
+        print(f"\nError: {e}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"\nUnexpected error: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
