@@ -67,8 +67,31 @@ class GameServer:
         @self.sio.event
         def join(sid, data):
             """Handle player join with name."""
+            # Validate data
+            if not isinstance(data, dict):
+                print(f"Invalid join data from {sid}: not a dictionary")
+                return
+            
             player_name = data.get('player_name', f'Player_{sid[:8]}')
+            
+            # Validate and sanitize player name
+            if not isinstance(player_name, str):
+                player_name = f'Player_{sid[:8]}'
+            player_name = player_name[:50].strip()  # Limit length and trim whitespace
+            if not player_name:
+                player_name = f'Player_{sid[:8]}'
+            
+            # Check if player already joined
+            if sid in self.game_state['players']:
+                print(f"Player {sid} already joined, ignoring duplicate join")
+                return
+            
             print(f"Player joined: {player_name} (sid: {sid})")
+            
+            # Verify client exists (handle race condition)
+            if sid not in self.clients:
+                print(f"Client {sid} not found in clients list, cannot join")
+                return
             
             # Update client info
             self.clients[sid]['player_name'] = player_name
@@ -81,10 +104,11 @@ class GameServer:
                 'is_ai': False
             }
             
-            # Broadcast player join event
+            # Broadcast player join event (always include is_ai for consistency)
             self.sio.emit('player_joined', {
                 'player_id': sid,
-                'player_name': player_name
+                'player_name': player_name,
+                'is_ai': False
             })
             
             # Send updated game state
@@ -96,26 +120,36 @@ class GameServer:
             player_name = self.clients.get(sid, {}).get('player_name', 'Unknown')
             print(f"Client disconnected: {player_name} (sid: {sid})")
             
+            # Check if player was actually in the game (had joined)
+            was_in_game = sid in self.game_state['players']
+            
             # Remove player from game state
-            if sid in self.game_state['players']:
+            if was_in_game:
                 del self.game_state['players'][sid]
             
             # Remove client
             if sid in self.clients:
                 del self.clients[sid]
             
-            # Broadcast player leave event
-            self.sio.emit('player_left', {
-                'player_id': sid,
-                'player_name': player_name
-            })
-            
-            # Send updated game state
-            self.broadcast_state()
+            # Only broadcast player_left if player had officially joined
+            if was_in_game:
+                self.sio.emit('player_left', {
+                    'player_id': sid,
+                    'player_name': player_name,
+                    'is_ai': False
+                })
+                
+                # Send updated game state
+                self.broadcast_state()
         
         @self.sio.event
         def player_action(sid, data):
             """Handle player actions."""
+            # Validate data
+            if not isinstance(data, dict):
+                print(f"Invalid action data from {sid}: not a dictionary")
+                return
+            
             print(f"Action from {sid}: {data}")
             # Process action and update game state
             self._process_action(sid, data)
@@ -125,9 +159,23 @@ class GameServer:
         @self.sio.event
         def chat_message(sid, data):
             """Handle chat messages."""
+            # Validate data
+            if not isinstance(data, dict):
+                print(f"Invalid chat data from {sid}: not a dictionary")
+                return
+            
+            # Validate and limit message length
+            message_text = data.get('message', '')
+            if not isinstance(message_text, str):
+                print(f"Invalid message type from {sid}")
+                return
+            
+            # Limit message length to 500 characters
+            message_text = message_text[:500]
+            
             message = {
                 'player_id': sid,
-                'message': data.get('message', ''),
+                'message': message_text,
                 'timestamp': time.time()
             }
             self.sio.emit('chat_message', message)
@@ -145,11 +193,26 @@ class GameServer:
         if action_type == 'update_entity':
             entity_id = action.get('entity_id')
             entity_data = action.get('data')
-            if entity_id and entity_data:
+            
+            # Validate entity_id
+            if not entity_id or not isinstance(entity_id, str):
+                print(f"Invalid entity_id in action from {player_id}")
+                return
+            
+            # Limit entity_id length
+            entity_id = entity_id[:100]
+            
+            if entity_data and isinstance(entity_data, dict):
                 self.game_state['entities'][entity_id] = entity_data
         
         elif action_type == 'remove_entity':
             entity_id = action.get('entity_id')
+            
+            # Validate entity_id
+            if not entity_id or not isinstance(entity_id, str):
+                print(f"Invalid entity_id in remove action from {player_id}")
+                return
+            
             if entity_id in self.game_state['entities']:
                 del self.game_state['entities'][entity_id]
         

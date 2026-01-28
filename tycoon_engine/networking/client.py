@@ -94,7 +94,10 @@ class GameClient:
             self.player_name = player_name
             
             # Send join message if player name provided
+            # Wait a bit for connection to fully establish
             if player_name:
+                import time
+                time.sleep(0.1)  # Small delay to ensure connection is ready
                 self.join(player_name)
             
             return True
