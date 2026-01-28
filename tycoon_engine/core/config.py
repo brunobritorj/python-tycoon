@@ -9,6 +9,12 @@ from dataclasses import dataclass, field
 from typing import Dict, Any, Tuple, Optional
 import json
 
+try:
+    import yaml
+    YAML_AVAILABLE = True
+except ImportError:
+    YAML_AVAILABLE = False
+
 
 @dataclass
 class GameConfig:
@@ -54,6 +60,69 @@ class GameConfig:
         from dataclasses import asdict
         with open(json_path, 'w') as f:
             json.dump(asdict(self), f, indent=2)
+    
+    @classmethod
+    def from_yaml(cls, yaml_path: str) -> "GameConfig":
+        """
+        Load configuration from a YAML file.
+        
+        Args:
+            yaml_path: Path to YAML configuration file
+            
+        Returns:
+            GameConfig instance
+            
+        Raises:
+            ImportError: If PyYAML is not installed
+            FileNotFoundError: If file doesn't exist
+        """
+        if not YAML_AVAILABLE:
+            raise ImportError("PyYAML is required for YAML support. Install it with: pip install PyYAML")
+        
+        with open(yaml_path, 'r') as f:
+            data = yaml.safe_load(f)
+        return cls(**data)
+    
+    def to_yaml(self, yaml_path: str) -> None:
+        """
+        Save configuration to a YAML file.
+        
+        Args:
+            yaml_path: Path to save YAML configuration
+            
+        Raises:
+            ImportError: If PyYAML is not installed
+        """
+        if not YAML_AVAILABLE:
+            raise ImportError("PyYAML is required for YAML support. Install it with: pip install PyYAML")
+        
+        from dataclasses import asdict
+        with open(yaml_path, 'w') as f:
+            yaml.dump(asdict(self), f, default_flow_style=False, indent=2)
+    
+    @classmethod
+    def from_file(cls, file_path: str) -> "GameConfig":
+        """
+        Load configuration from either JSON or YAML file (auto-detects format).
+        
+        Args:
+            file_path: Path to configuration file
+            
+        Returns:
+            GameConfig instance
+        """
+        if file_path.endswith('.yaml') or file_path.endswith('.yml'):
+            return cls.from_yaml(file_path)
+        elif file_path.endswith('.json'):
+            return cls.from_json(file_path)
+        else:
+            # Try JSON first, then YAML
+            try:
+                return cls.from_json(file_path)
+            except json.JSONDecodeError:
+                if YAML_AVAILABLE:
+                    return cls.from_yaml(file_path)
+                raise ValueError(f"Could not determine file format for {file_path}")
     
     def get_resolution(self) -> Tuple[int, int]:
         """Get screen resolution as tuple."""
