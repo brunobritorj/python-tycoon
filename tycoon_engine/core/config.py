@@ -51,8 +51,9 @@ class GameConfig:
     
     def to_json(self, json_path: str) -> None:
         """Save configuration to a JSON file."""
+        from dataclasses import asdict
         with open(json_path, 'w') as f:
-            json.dump(self.__dict__, f, indent=2)
+            json.dump(asdict(self), f, indent=2)
     
     def get_resolution(self) -> Tuple[int, int]:
         """Get screen resolution as tuple."""

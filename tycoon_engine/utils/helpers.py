@@ -14,10 +14,15 @@ class Timer:
         Initialize a timer.
         
         Args:
-            interval: Time interval in seconds
+            interval: Time interval in seconds (must be positive)
             callback: Function to call when timer expires
             repeat: Whether to repeat the timer
+        
+        Raises:
+            ValueError: If interval is not positive
         """
+        if interval <= 0:
+            raise ValueError("Timer interval must be positive")
         self.interval = interval
         self.callback = callback
         self.repeat = repeat
@@ -33,7 +38,8 @@ class Timer:
         if self.elapsed >= self.interval:
             self.callback()
             if self.repeat:
-                self.elapsed = 0.0
+                # Subtract interval to preserve timing accuracy
+                self.elapsed -= self.interval
             else:
                 self.active = False
     

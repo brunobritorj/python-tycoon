@@ -6,6 +6,7 @@ Handles client connections and game state synchronization.
 
 import socketio
 import eventlet
+import time
 from typing import Dict, Any, Optional
 import json
 
@@ -15,19 +16,24 @@ class GameServer:
     Multiplayer game server using Socket.IO.
     
     Manages client connections and synchronizes game state across clients.
+    
+    Security Note: This implementation uses CORS with allowed_origins='*' for 
+    development convenience. In production, configure CORS to only allow 
+    trusted origins by passing a specific list or domain pattern.
     """
     
-    def __init__(self, host: str = "localhost", port: int = 5000):
+    def __init__(self, host: str = "localhost", port: int = 5000, cors_origins: str = '*'):
         """
         Initialize game server.
         
         Args:
             host: Server host address
             port: Server port
+            cors_origins: CORS allowed origins ('*' for all, or specific origins)
         """
         self.host = host
         self.port = port
-        self.sio = socketio.Server(cors_allowed_origins='*')
+        self.sio = socketio.Server(cors_allowed_origins=cors_origins)
         self.app = socketio.WSGIApp(self.sio)
         
         # Game state
@@ -49,7 +55,7 @@ class GameServer:
             print(f"Client connected: {sid}")
             self.clients[sid] = {
                 'player_id': sid,
-                'connected_at': eventlet.time.time()
+                'connected_at': time.time()
             }
             # Send current game state to new client
             self.sio.emit('game_state', self.game_state, room=sid)
@@ -76,7 +82,7 @@ class GameServer:
             message = {
                 'player_id': sid,
                 'message': data.get('message', ''),
-                'timestamp': eventlet.time.time()
+                'timestamp': time.time()
             }
             self.sio.emit('chat_message', message)
     
@@ -126,10 +132,15 @@ def main():
     parser = argparse.ArgumentParser(description='Tycoon Game Server')
     parser.add_argument('--host', default='localhost', help='Server host')
     parser.add_argument('--port', type=int, default=5000, help='Server port')
+    parser.add_argument(
+        '--cors-origins', 
+        default='*', 
+        help='CORS allowed origins (default: * for development, use specific origins in production)'
+    )
     
     args = parser.parse_args()
     
-    server = GameServer(host=args.host, port=args.port)
+    server = GameServer(host=args.host, port=args.port, cors_origins=args.cors_origins)
     server.run()
 
 

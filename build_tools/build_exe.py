@@ -34,7 +34,7 @@ def build_exe():
     cmd = [
         "pyinstaller",
         "--onefile",  # Single executable file
-        "--windowed",  # No console window (remove for console apps)
+        "--windowed",  # No console window (use --console for debugging)
         "--name", "LemonadeStandTycoon",
         "--add-data", f"{project_root / 'tycoon_engine'}{os.pathsep}tycoon_engine",
         str(main_script)

@@ -73,8 +73,11 @@ class GameClient:
         try:
             self.sio.connect(self.url)
             return True
+        except socketio.exceptions.ConnectionError as e:
+            print(f"Failed to connect to {self.url}: {e}")
+            return False
         except Exception as e:
-            print(f"Failed to connect: {e}")
+            print(f"Unexpected error connecting to {self.url}: {e}")
             return False
     
     def disconnect(self) -> None:
