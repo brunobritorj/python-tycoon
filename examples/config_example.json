@@ -1,0 +1,23 @@
+{
+  "game_title": "My Custom Tycoon Game",
+  "game_version": "1.0.0",
+  "screen_width": 1920,
+  "screen_height": 1080,
+  "fps": 60,
+  "fullscreen": false,
+  "enable_multiplayer": true,
+  "server_host": "localhost",
+  "server_port": 5000,
+  "starting_money": 15000.0,
+  "tick_rate": 1.0,
+  "max_entities": 2000,
+  "custom_params": {
+    "difficulty": "medium",
+    "theme": "modern",
+    "enable_tutorials": true,
+    "autosave_interval": 300,
+    "language": "en",
+    "sound_volume": 0.8,
+    "music_volume": 0.6
+  }
+}
