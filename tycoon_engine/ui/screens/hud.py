@@ -323,8 +323,8 @@ class HUDScreen:
         if self.on_menu:
             self.on_menu()
         else:
-            # Default: post ESC key event to trigger pause
-            pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE))
+            # Default: Do nothing - user should provide a callback
+            pass
 
 
 class PauseMenuState(GameState):

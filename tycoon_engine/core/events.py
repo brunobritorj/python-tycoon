@@ -199,36 +199,50 @@ class EventDispatcher:
 # Convenience functions for common event patterns
 
 def on_key_down(dispatcher: EventDispatcher, key: int, callback: Callable, 
-                priority: EventPriority = EventPriority.NORMAL) -> None:
+                priority: EventPriority = EventPriority.NORMAL) -> Callable:
     """
     Subscribe to a specific key press event.
+    
+    Note: This creates a closure filter. To unsubscribe, you must use the returned
+    filter function with dispatcher.unsubscribe(), not the original callback.
     
     Args:
         dispatcher: Event dispatcher instance
         key: Pygame key constant (e.g., pygame.K_SPACE)
         callback: Function to call when key is pressed
         priority: Priority level
+        
+    Returns:
+        The filter function that was subscribed (needed for unsubscribing)
     """
     def key_filter(event: pygame.event.Event):
         if event.key == key:
             callback(event)
     
     dispatcher.subscribe(pygame.KEYDOWN, key_filter, priority)
+    return key_filter
 
 
 def on_mouse_click(dispatcher: EventDispatcher, button: int, callback: Callable,
-                   priority: EventPriority = EventPriority.NORMAL) -> None:
+                   priority: EventPriority = EventPriority.NORMAL) -> Callable:
     """
     Subscribe to a specific mouse button click event.
+    
+    Note: This creates a closure filter. To unsubscribe, you must use the returned
+    filter function with dispatcher.unsubscribe(), not the original callback.
     
     Args:
         dispatcher: Event dispatcher instance
         button: Mouse button number (1=left, 2=middle, 3=right)
         callback: Function to call when button is clicked
         priority: Priority level
+        
+    Returns:
+        The filter function that was subscribed (needed for unsubscribing)
     """
     def button_filter(event: pygame.event.Event):
         if event.button == button:
             callback(event)
     
     dispatcher.subscribe(pygame.MOUSEBUTTONDOWN, button_filter, priority)
+    return button_filter

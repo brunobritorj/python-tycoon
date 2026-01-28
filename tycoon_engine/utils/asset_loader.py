@@ -38,6 +38,9 @@ class AssetLoader:
         # Track loaded music file
         self._current_music: Optional[str] = None
         
+        # Track audio availability
+        self._audio_available = False
+        
         # Initialize pygame modules if not already initialized
         if not pygame.get_init():
             pygame.init()
@@ -46,8 +49,18 @@ class AssetLoader:
         if not pygame.mixer.get_init():
             try:
                 pygame.mixer.init()
+                self._audio_available = True
             except pygame.error:
-                print("Warning: Could not initialize audio mixer")
+                print("Warning: Could not initialize audio mixer - audio features will be disabled")
+    
+    def is_audio_available(self) -> bool:
+        """
+        Check if audio features are available.
+        
+        Returns:
+            True if audio mixer is initialized, False otherwise
+        """
+        return self._audio_available
     
     def _resolve_path(self, relative_path: str) -> Path:
         """
@@ -218,10 +231,24 @@ class AssetLoader:
         Args:
             loops: Number of times to loop (-1 for infinite)
             start: Starting position in seconds
+            
+        Raises:
+            RuntimeError: If no music is loaded or audio is not available
         """
+        if not self._audio_available:
+            raise RuntimeError("Audio mixer not initialized")
         if self._current_music is None:
             raise RuntimeError("No music loaded. Call load_music() first.")
         pygame.mixer.music.play(loops, start)
+    
+    def has_music_loaded(self) -> bool:
+        """
+        Check if music is currently loaded.
+        
+        Returns:
+            True if music is loaded, False otherwise
+        """
+        return self._current_music is not None
     
     def stop_music(self) -> None:
         """Stop the currently playing music."""

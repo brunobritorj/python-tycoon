@@ -31,16 +31,13 @@ class UIManager:
         
         Args:
             component: Component to add
-            z_order: Optional z-order (higher values render on top).
-                    If None, adds to end of list.
+            z_order: Optional z-order for rendering (higher values render on top).
+                    Note: This is a placeholder for future implementation.
+                    Currently components render in order added.
         """
-        if z_order is not None:
-            # Insert at specific position based on z-order
-            # For simplicity, we'll just append and sort
-            self.components.append(component)
-            self.components.sort(key=lambda c: getattr(c, '_z_order', 0))
-        else:
-            self.components.append(component)
+        # TODO: Implement proper z-ordering system
+        # For now, just append to the list
+        self.components.append(component)
     
     def remove_component(self, component: UIComponent) -> None:
         """
