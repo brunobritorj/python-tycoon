@@ -29,10 +29,14 @@ class GameClient:
         self.url = f"http://{host}:{port}"
         self.sio = socketio.Client()
         self.connected = False
+        self.player_id: Optional[str] = None
+        self.player_name: Optional[str] = None
         
         # Callbacks for events
         self.on_state_update: Optional[Callable[[Dict[str, Any]], None]] = None
         self.on_chat_message: Optional[Callable[[Dict[str, Any]], None]] = None
+        self.on_player_joined: Optional[Callable[[Dict[str, Any]], None]] = None
+        self.on_player_left: Optional[Callable[[Dict[str, Any]], None]] = None
         
         self._setup_handlers()
     
@@ -62,16 +66,40 @@ class GameClient:
             """Handle chat messages."""
             if self.on_chat_message:
                 self.on_chat_message(data)
+        
+        @self.sio.event
+        def player_joined(data):
+            """Handle player joined event."""
+            if self.on_player_joined:
+                self.on_player_joined(data)
+        
+        @self.sio.event
+        def player_left(data):
+            """Handle player left event."""
+            if self.on_player_left:
+                self.on_player_left(data)
     
-    def connect(self) -> bool:
+    def connect(self, player_name: Optional[str] = None) -> bool:
         """
         Connect to the game server.
+        
+        Args:
+            player_name: Optional player name to use when joining
         
         Returns:
             True if connection successful, False otherwise
         """
         try:
             self.sio.connect(self.url)
+            self.player_name = player_name
+            
+            # Send join message if player name provided
+            # Wait a bit for connection to fully establish
+            if player_name:
+                import time
+                time.sleep(0.1)  # Small delay to ensure connection is ready
+                self.join(player_name)
+            
             return True
         except socketio.exceptions.ConnectionError as e:
             print(f"Failed to connect to {self.url}: {e}")
@@ -79,6 +107,17 @@ class GameClient:
         except Exception as e:
             print(f"Unexpected error connecting to {self.url}: {e}")
             return False
+    
+    def join(self, player_name: str) -> None:
+        """
+        Send join message to server with player name.
+        
+        Args:
+            player_name: Player name to use
+        """
+        if self.connected:
+            self.player_name = player_name
+            self.sio.emit('join', {'player_name': player_name})
     
     def disconnect(self) -> None:
         """Disconnect from the game server."""
