@@ -198,7 +198,9 @@ python build_tools/build_exe.py
 python build_tools/build_exe.py --clean
 ```
 
-The executable will be created in the `dist/` directory.
+The executable will be created in the `dist/` directory with the version embedded in the filename.
+
+For detailed build and distribution instructions, see [BUILD.md](BUILD.md).
 
 ## Development
 
