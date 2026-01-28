@@ -5,7 +5,7 @@ Provides a basic resource model with income/expense tracking and configurable pa
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, Any, Callable, Optional
+from typing import Dict, Any, Callable, Optional, List
 from ..entities.resources import ResourceManager
 
 
@@ -23,7 +23,7 @@ class EconomyConfig:
     
     # Tax and interest rates
     tax_rate: float = 0.1  # 10% tax on income
-    interest_rate: float = 0.05  # 5% interest on savings
+    interest_rate: float = 0.05  # 5% interest per tick
     
     # Tick configuration
     tick_interval: float = 1.0  # Time between ticks in seconds
@@ -63,8 +63,8 @@ class EconomySystem:
         self._accumulated_time = 0.0
         
         # Hooks for custom income/expense calculations
-        self._income_modifiers: list[Callable[[float], float]] = []
-        self._expense_modifiers: list[Callable[[float], float]] = []
+        self._income_modifiers: List[Callable[[float], float]] = []
+        self._expense_modifiers: List[Callable[[float], float]] = []
         
         # Statistics tracking
         self.total_income = 0.0
@@ -119,9 +119,9 @@ class EconomySystem:
         # Apply tax
         income *= (1.0 - self.config.tax_rate)
         
-        # Apply interest on current savings
+        # Apply interest on current savings (interest_rate is per tick)
         current_money = self.resource_manager.get_money()
-        interest = current_money * self.config.interest_rate * self.config.tick_interval
+        interest = current_money * self.config.interest_rate
         income += interest
         
         return income

@@ -126,7 +126,7 @@ def test_economy_system_interest():
     
     economy.update(1.0)
     
-    # Interest: 1000 * 0.1 * 1.0 = 100
+    # Interest: 1000 * 0.1 = 100 (per tick, not multiplied by tick_interval)
     assert rm.get_money() == 1000.0 + 100.0
 
 

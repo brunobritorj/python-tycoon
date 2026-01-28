@@ -14,7 +14,7 @@ class AIPlayerState(Enum):
     IDLE = "idle"
     PLANNING = "planning"
     EXECUTING = "executing"
-    WAITING = "waiting"
+    WAITING = "waiting"  # Reserved for future use (e.g., waiting for resources, cooldowns)
 
 
 class AIPlayer:
@@ -82,7 +82,7 @@ class AIPlayer:
         
         # Check if it's time to make a decision
         if self._decision_timer >= self._decision_interval:
-            self._decision_timer = 0.0
+            self._decision_timer -= self._decision_interval
             self._make_decision(game_state)
         
         # Execute queued actions
@@ -134,9 +134,10 @@ class AIPlayer:
                 actions_to_remove.append(action)
                 self.actions_taken += 1
         
-        # Remove executed actions
-        for action in actions_to_remove:
-            self._action_queue.remove(action)
+        # Remove executed actions efficiently
+        if actions_to_remove:
+            actions_to_remove_set = set(id(a) for a in actions_to_remove)
+            self._action_queue = [a for a in self._action_queue if id(a) not in actions_to_remove_set]
         
         # Update state
         if not self._action_queue:
