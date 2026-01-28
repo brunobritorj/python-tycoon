@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tycoon-engine"
+version = "0.1.0"
+description = "A modular 2D Tycoon/Management game engine built with Python and Pygame"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "Python Tycoon Contributors"}
+]
+keywords = ["game", "tycoon", "pygame", "multiplayer", "management"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+dependencies = [
+    "pygame>=2.5.0",
+    "python-socketio>=5.10.0",
+    "python-socketio[client]>=5.10.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+]
+build = [
+    "pyinstaller>=5.13.0",
+]
+
+[project.scripts]
+tycoon-demo = "examples.demo_tycoon.main:main"
+tycoon-server = "tycoon_engine.networking.server:main"
+
+[tool.setuptools.packages.find]
+include = ["tycoon_engine*", "examples*"]
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311']
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --cov=tycoon_engine --cov-report=term-missing"
